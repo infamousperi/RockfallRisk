@@ -21,4 +21,5 @@ def _read_csv(filename):
 
 def _convert_date(df):
     df['Date'] = pd.to_datetime(df['Date'], format='mixed').dt.strftime('%d/%m/%Y')
+    df['Month'] = pd.to_datetime(df['Date'], format='%d/%m/%Y').dt.strftime('%m')
     return df
