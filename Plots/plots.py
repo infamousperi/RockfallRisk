@@ -8,7 +8,7 @@ order = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00',
 
 def show_scatter_stones(df, title):
     fig = px.scatter(df, x='Mass [kg]', y='Velocity [m/s]', size='Kinetic Energy [kJ]', color='Kinetic Energy [kJ]',
-                     title="Scatter-Diagram of Separation Zone " + str(title))
+                     title="Scatter-Diagram of Separation Zone " + str(title), range_color=(0, 500))
     fig.show()
 
 
