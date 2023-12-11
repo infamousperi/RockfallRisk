@@ -1,3 +1,4 @@
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -41,59 +42,30 @@ def show_event_timeing(df1, df2):
     fig.show()
 
 
-def show_histogram_velocity(df1, df2):
-    fig = make_subplots(rows=1, cols=2)
-    fig.add_trace(go.Histogram(x=df1['Velocity [m/s]'], name="Separation Zone 1"), row=1, col=1)
-    fig.add_trace(go.Histogram(x=df2['Velocity [m/s]'], name="Separation Zone 2"), row=1, col=2)
+def show_histogram(df1, df2, plot_info, binsize):
+    title = plot_info[0]
+    column = plot_info[1]
 
-    fig.update_traces(xbins=dict(size=1))
-    fig.update_layout(title_text='Rockfall Histogram By Velocity')
-    fig.update_xaxes(title_text='Velocity [m/s]', row=1, col=1)
-    fig.update_xaxes(title_text='Velocity [m/s]', row=1, col=2)
+    fig = make_subplots(rows=1, cols=2)
+    fig.add_trace(go.Histogram(x=df1[column], name="Separation Zone 1"), row=1, col=1)
+    fig.add_trace(go.Histogram(x=df2[column], name="Separation Zone 2"), row=1, col=2)
+
+    fig.update_traces(xbins=dict(size=binsize))
+    fig.update_layout(title_text='Rockfall Histogram By ' + title)
+    fig.update_xaxes(title_text=column, row=1, col=1)
+    fig.update_xaxes(title_text=column, row=1, col=2)
     fig.update_yaxes(title_text="Count", row=1, col=1)
     fig.update_yaxes(title_text="Count", row=1, col=2)
     fig.show()
 
 
-def show_histogram_mass(df1, df2):
-    fig = make_subplots(rows=1, cols=2)
-    fig.add_trace(go.Histogram(x=df1['Mass [kg]'], name="Separation Zone 1"), row=1, col=1)
-    fig.add_trace(go.Histogram(x=df2['Mass [kg]'], name="Separation Zone 2"), row=1, col=2)
-
-    fig.update_traces(xbins=dict(size=100))
-    fig.update_layout(title_text='Rockfall Histogram By Mass')
-    fig.update_xaxes(title_text='Mass [kg]', row=1, col=1)
-    fig.update_xaxes(title_text='Mass [kg]', row=1, col=2)
-    fig.update_yaxes(title_text="Count", row=1, col=1)
-    fig.update_yaxes(title_text="Count", row=1, col=2)
-    fig.show()
-
-
-def show_box_velocity(df1, df2):
-    fig = go.Figure()
-    fig.add_trace(go.Box(x=df1['Velocity [m/s]'], name="Separation Zone 1"))
-    fig.add_trace(go.Box(x=df2['Velocity [m/s]'], name="Separation Zone 2"))
-
-    fig.update_layout(title_text='Rockfall Boxplot By Velocity')
-    fig.show()
-
-
-def show_box_mass(df1, df2):
-    fig = go.Figure()
-    fig.add_trace(go.Box(x=df1['Mass [kg]'], name="Separation Zone 1"))
-    fig.add_trace(go.Box(x=df2['Mass [kg]'], name="Separation Zone 2"))
-
-    fig.update_layout(title_text='Rockfall Boxplot By Mass')
-    fig.show()
-
-
-def show_kJ_distribution(df1, df2):
+def show_histogram_kinetic_energy(df1, df2):
     fig = make_subplots(rows=2, cols=1)
     fig.add_trace(go.Histogram(x=df1['Kinetic Energy [kJ]'], name="Separation Zone 1"), row=1, col=1)
     fig.add_trace(go.Histogram(x=df2['Kinetic Energy [kJ]'], name="Separation Zone 2"), row=2, col=1)
 
     fig.update_traces(xbins=dict(size=5))
-    fig.update_layout(title_text='KJ Distribution')
+    fig.update_layout(title_text='Rockfall Histogram By Kinetic Energy')
     fig.update_xaxes(title_text='Kinetic Energy [kJ]', range=[0, 400], row=1, col=1)
     fig.update_xaxes(title_text='Kinetic Energy [kJ]', range=[0, 400], row=2, col=1)
     fig.update_yaxes(title_text="Count", range=[0, 20], row=1, col=1)
@@ -101,14 +73,55 @@ def show_kJ_distribution(df1, df2):
     fig.show()
 
 
-def show_ectf_velocity(df):
-    fig = px.ecdf(df, x='Velocity [m/s]')
+def show_box(df1, df2, plot_info):
+    title = plot_info[0]
+    column = plot_info[1]
+
+    fig = go.Figure()
+    fig.add_trace(go.Box(x=df1[column], name="Separation Zone 1"))
+    fig.add_trace(go.Box(x=df2[column], name="Separation Zone 2"))
+
+    fig.update_layout(title_text='Rockfall Boxplot By ' + title)
     fig.show()
 
-def show_density_velocity(df):
-    fig = px.histogram(df, x='Velocity [m/s]', histnorm='probability density')
+
+def show_dist_plot(df1, df2, plot_info):
+    title = plot_info[1]
+    column = plot_info[1]
+    hist_data = [df1[column], df2[column]]
+    group_labels = ['Separation Zone 1', 'Separation Zone 2']
+
+    fig = ff.create_distplot(hist_data, group_labels)
+
+    fig.update_layout(title_text='Distribution of ' + title)
+    fig.update_traces(autobinx=True, selector={'type': 'histogram'})
+    fig.update_layout(height=700, width=800)
     fig.show()
 
-def show_distplot_velocity(df):
-    fig = ff.create_distplot([df['Velocity [m/s]']], ['Velocity [m/s]'])
+
+def show_time_between_events(df1, df2):
+    df1['DateTime'] = pd.to_datetime(df1['Date'] + ' ' + df1['Time'], dayfirst=True)
+    df2['DateTime'] = pd.to_datetime(df2['Date'] + ' ' + df2['Time'], dayfirst=True)
+
+    df1['TimeDiffHours'] = df1['DateTime'].diff().dt.total_seconds() / 3600
+    df2['TimeDiffHours'] = df2['DateTime'].diff().dt.total_seconds() / 3600
+
+    df1['TimeDiffHours'] = df1['TimeDiffHours'].fillna(0)
+    df2['TimeDiffHours'] = df2['TimeDiffHours'].fillna(0)
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(x=df1['DateTime'], y=df1['TimeDiffHours'],
+                             mode='lines+markers',
+                             name="Separation Zone 1"))
+
+    fig.add_trace(go.Scatter(x=df2['DateTime'], y=df2['TimeDiffHours'],
+                             mode='lines+markers',
+                             name="Separation Zone 2"))
+
+    fig.update_layout(title='Time Between Events over Time',
+                      xaxis_title='DateTime of Event',
+                      yaxis_title='Hours',
+                      legend_title='Metrics')
     fig.show()
+
