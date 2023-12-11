@@ -1,4 +1,3 @@
-import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -100,15 +99,6 @@ def show_dist_plot(df1, df2, plot_info):
 
 
 def show_time_between_events(df1, df2):
-    df1['DateTime'] = pd.to_datetime(df1['Date'] + ' ' + df1['Time'], dayfirst=True)
-    df2['DateTime'] = pd.to_datetime(df2['Date'] + ' ' + df2['Time'], dayfirst=True)
-
-    df1['TimeDiffHours'] = df1['DateTime'].diff().dt.total_seconds() / 3600
-    df2['TimeDiffHours'] = df2['DateTime'].diff().dt.total_seconds() / 3600
-
-    df1['TimeDiffHours'] = df1['TimeDiffHours'].fillna(0)
-    df2['TimeDiffHours'] = df2['TimeDiffHours'].fillna(0)
-
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(x=df1['DateTime'], y=df1['TimeDiffHours'],
