@@ -23,6 +23,32 @@ def simulate_gamma_distribution(df, n_simulations, sim_info):
     return simulated_df
 
 
+def simulate_gamma_distribution_rounded(df, n_simulations, sim_info, decimal_places=0):
+    column = sim_info[1]
+    isolated_data = df[column].dropna()
+
+    # Calculate parameters for the gamma distribution
+    mean_isolated_data = isolated_data.mean()
+    variance_isolated_data = isolated_data.var()
+    theta = variance_isolated_data / mean_isolated_data
+    k = mean_isolated_data / theta
+
+    # Simulate data using the gamma distribution
+    simulated_data = gamma.rvs(a=k, scale=theta, size=n_simulations)
+
+    # Round the simulated data
+    rounded_simulated_data = [round(num, decimal_places) for num in simulated_data]
+
+    # Ensure the first value is 0
+    if len(rounded_simulated_data) > 0:
+        rounded_simulated_data[0] = 0
+
+    # Create DataFrame with rounded values
+    simulated_df = pd.DataFrame(rounded_simulated_data, columns=[column])
+
+    return simulated_df
+
+
 def simulate_norm_distribution(df, n_simulations, sim_info):
     column = sim_info[1]
     isolated_data = df[column].dropna()
