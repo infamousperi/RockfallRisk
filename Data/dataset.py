@@ -31,3 +31,36 @@ def _calculate_timedelta(df):
     df['TimeDiffHours'] = df['TimeDiffHours'].fillna(0)
 
     return df
+
+
+def merge_simulated_data(mass, velocity):
+    merged_df = mass.join(velocity['Velocity [m/s]'])
+    merged_df['Kinetic Energy [kJ]'] = cal.calculate_kinetic_energy_kj(merged_df['Mass [kg]'],
+                                                                       merged_df['Velocity [m/s]'])
+
+    return merged_df
+
+
+def replace_outliers_with_median(df):
+    columns = ['Mass [kg]', 'Velocity [m/s]', 'TimeDiffHours']
+
+    for col in columns:
+        # Define the quartiles
+        Q1 = df[col].quantile(0.25)
+        Q3 = df[col].quantile(0.75)
+        IQR = Q3 - Q1
+
+        # Define the boundaries for outliers
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+
+        # Identify outliers
+        outliers = (df[col] < lower_bound) | (df[col] > upper_bound)
+
+        # Calculate mean without outliers
+        median_without_outliers = df.loc[~outliers, col].median()
+
+        # Replace outliers with median
+        df.loc[outliers, col] = median_without_outliers
+
+    return df
