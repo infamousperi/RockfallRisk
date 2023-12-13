@@ -23,7 +23,7 @@ def simulate_gamma_distribution(df, n_simulations, sim_info):
     return simulated_df
 
 
-def simulate_gamma_distribution_rounded(df, n_simulations, sim_info, decimal_places=0):
+def simulate_gamma_distribution_timediff(df, n_years, sim_info, decimal_places=0):
     column = sim_info[1]
     isolated_data = df[column].dropna()
 
@@ -33,18 +33,29 @@ def simulate_gamma_distribution_rounded(df, n_simulations, sim_info, decimal_pla
     theta = variance_isolated_data / mean_isolated_data
     k = mean_isolated_data / theta
 
-    # Simulate data using the gamma distribution
-    simulated_data = gamma.rvs(a=k, scale=theta, size=n_simulations)
+    # Total hours to simulate
+    total_hours = n_years * 8760
+    current_sum = 0
+    simulated_data = []
 
-    # Round the simulated data
-    rounded_simulated_data = [round(num, decimal_places) for num in simulated_data]
+    # Simulate data until the sum reaches total_hours
+    while current_sum < total_hours:
+        simulated_value = gamma.rvs(a=k, scale=theta)
+        rounded_value = round(simulated_value, decimal_places)
+        current_sum += rounded_value
+
+        if current_sum > total_hours:
+            # Adjust the last value to match exactly total_hours
+            rounded_value -= current_sum - total_hours
+
+        simulated_data.append(rounded_value)
 
     # Ensure the first value is 0
-    if len(rounded_simulated_data) > 0:
-        rounded_simulated_data[0] = 0
+    if len(simulated_data) > 0:
+        simulated_data[0] = 0
 
     # Create DataFrame with rounded values
-    simulated_df = pd.DataFrame(rounded_simulated_data, columns=[column])
+    simulated_df = pd.DataFrame(simulated_data, columns=[column])
 
     return simulated_df
 
