@@ -35,20 +35,27 @@ def simulate_gamma_distribution_timediff(df, n_years, sim_info, decimal_places=0
 
     # Total hours to simulate
     total_hours = n_years * 8760
-    current_sum = 0
-    simulated_data = []
 
-    # Simulate data until the sum reaches total_hours
-    while current_sum < total_hours:
-        simulated_value = gamma.rvs(a=k, scale=theta)
-        rounded_value = round(simulated_value, decimal_places)
-        current_sum += rounded_value
+    # Estimate the number of samples needed based on mean value
+    estimated_samples = int(total_hours / mean_isolated_data) + 1
 
-        if current_sum > total_hours:
-            # Adjust the last value to match exactly total_hours
-            rounded_value -= current_sum - total_hours
+    # Sample the estimated number of values from the gamma distribution
+    simulated_values = gamma.rvs(a=k, scale=theta, size=estimated_samples)
 
-        simulated_data.append(rounded_value)
+    # Round the values and calculate the cumulative sum
+    rounded_values = np.round(simulated_values, decimal_places)
+    cumulative_sum = np.cumsum(rounded_values)
+
+    # Trim the array to the point where the cumulative sum just exceeds total_hours
+    valid_indices = np.where(cumulative_sum <= total_hours)[0]
+    if len(valid_indices) < len(cumulative_sum):
+        # Include the next index to adjust the sum to match total_hours
+        valid_indices = np.append(valid_indices, valid_indices[-1] + 1)
+
+    # Adjust the last value to ensure the total matches exactly total_hours
+    simulated_data = rounded_values[valid_indices]
+    if cumulative_sum[valid_indices[-1]] > total_hours:
+        simulated_data[-1] -= cumulative_sum[valid_indices[-1]] - total_hours
 
     # Ensure the first value is 0
     if len(simulated_data) > 0:

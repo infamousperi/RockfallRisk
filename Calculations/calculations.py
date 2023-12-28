@@ -1,5 +1,6 @@
 import pandas as pd
 from datetime import datetime, timedelta
+import numpy as np
 
 
 def calculate_kinetic_energy_kj(mass, velocity):
@@ -45,36 +46,39 @@ def _last_clearing_datetime(event_datetime):
 
 
 def sim_calculate_cumulative_mass_since_clearing(df1, df2):
-    df1['Zone'] = 1
-    df2['Zone'] = 2
+    chunk_size = 100000
 
-    # Concatenate dataframes without resetting index to maintain original order for later operations
+    # Concatenate dataframes without resetting index to maintain original order
     concatenated_df = pd.concat([df1, df2])
-
-    # Create a 'DateTime' string representation
-    concatenated_df['DateTime'] = concatenated_df['Year'].astype(str) + '-' + \
-                                  concatenated_df['Month'].astype(str).str.zfill(2) + '-' + \
-                                  concatenated_df['Day'].astype(str).str.zfill(2) + ' ' + \
-                                  concatenated_df['Timestamp']
-
-    # Apply custom function to calculate the 'LastClearing' based on the 'DateTime' string
-    concatenated_df['LastClearing'] = concatenated_df['DateTime'].apply(_sim_last_clearing_datetime)
 
     # Sort by 'DateTime' string
     concatenated_df = concatenated_df.sort_values('DateTime')
 
-    # Calculate cumulative mass
-    concatenated_df['CumulativeMass_kg'] = concatenated_df.groupby('LastClearing')['Mass [kg]'].cumsum()
-    concatenated_df['CumulativeMassInNet'] = concatenated_df['CumulativeMass_kg'] - concatenated_df['Mass [kg]']
+    # Split the dataframe into chunks
+    chunks = [concatenated_df[i:i + chunk_size] for i in range(0, concatenated_df.shape[0], chunk_size)]
 
-    # Find the first event for each 'DateTime' and get its 'CumulativeMassInNet'
-    first_events = concatenated_df.drop_duplicates('DateTime').set_index('DateTime')['CumulativeMassInNet']
-    concatenated_df['CumulativeMassInNet'] = concatenated_df['DateTime'].map(first_events)
+    result_chunks = []
 
-    # Create the result dataframe with relevant columns
-    result_df = concatenated_df[
-        ['DateTime', 'Zone', 'Mass [kg]', 'Velocity [m/s]', 'Kinetic Energy [kJ]', 'CumulativeMassInNet']]
+    for chunk in chunks:
+        # Apply custom function to calculate the 'LastClearing' based on the 'DateTime' string
+        chunk['LastClearing'] = chunk['DateTime'].apply(_sim_last_clearing_datetime)
 
+        # Calculate cumulative mass
+        chunk['CumulativeMass_kg'] = chunk.groupby('LastClearing')['Mass [kg]'].cumsum()
+        chunk['CumulativeMassInNet'] = chunk['CumulativeMass_kg'] - chunk['Mass [kg]']
+
+        # Find the first event for each 'DateTime' and get its 'CumulativeMassInNet'
+        first_events = chunk.drop_duplicates('DateTime').set_index('DateTime')['CumulativeMassInNet']
+        chunk['CumulativeMassInNet'] = chunk['DateTime'].map(first_events)
+
+        # Select relevant columns
+        chunk_result = chunk[
+            ['Kinetic Energy [kJ]', 'CumulativeMassInNet']]
+
+        result_chunks.append(chunk_result)
+
+    # Concatenate the processed chunks
+    result_df = pd.concat(result_chunks)
     return result_df
 
 
@@ -100,4 +104,7 @@ def _sim_last_clearing_datetime(event_datetime_str):
     # Construct the last clearing datetime string with correct year
     clearing_datetime_str = f"{year:04d}-{month:02d}-{day:02d} 02:30"
     return clearing_datetime_str
+
+
+
 
