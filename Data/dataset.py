@@ -22,33 +22,37 @@ def _read_csv(filename):
     return df
 
 
+def _custom_date_time(hours, start_year=1, start_month=1, start_day=1):
+    # Ensure hours is numeric
+    hours = float(hours)
+    start_date = np.datetime64(f"{start_year:04d}-{start_month:02d}-{start_day:02d}")
+    new_date = start_date + np.timedelta64(int(hours), 'h')
+
+    # Format the date and time separately
+    date_str = str(new_date).split('T')[0]  # Extract date part
+    time_str = str(new_date).split('T')[1] if 'T' in str(new_date) else "00"  # Extract or set time part
+
+    # Ensure time is in HH:MM format
+    if len(time_str) <= 2:
+        time_str += ':00'
+
+    return f"{date_str} {time_str}"
+
+
 def merge_simulated_data(mass, velocity, timediff):
     merged_df = mass.join(velocity['Velocity [m/s]']).join(timediff['TimeDiffHours'])
     merged_df['CumulativeTimeDiff'] = merged_df['TimeDiffHours'].cumsum()
 
+    # Calculate kinetic energy and create DateTime column
     merged_df['Kinetic Energy [kJ]'] = cal.calculate_kinetic_energy_kj(merged_df['Mass [kg]'],
                                                                        merged_df['Velocity [m/s]'])
     merged_df['DateTime'] = merged_df['CumulativeTimeDiff'].apply(_custom_date_time)
 
-    # Since we cannot use .dt accessor, manually extract date and time components
-    merged_df['Year'] = merged_df['DateTime'].apply(lambda x: x.year)
-    merged_df['Month'] = merged_df['DateTime'].apply(lambda x: x.month)
-    merged_df['Day'] = merged_df['DateTime'].apply(lambda x: x.day)
-    merged_df['Timestamp'] = merged_df['DateTime'].apply(lambda x: x.strftime('%H:%M'))
-
-    result_df = merged_df[['DateTime', 'Year', 'Month', 'Day', 'Timestamp',
-                           'Mass [kg]', 'Velocity [m/s]', 'Kinetic Energy [kJ]', 'TimeDiffHours']]
+    result_df = merged_df[
+        ['DateTime', 'Mass [kg]', 'Velocity [m/s]', 'Kinetic Energy [kJ]',
+         'TimeDiffHours']]
 
     return result_df
-
-
-def _custom_date_time(hours, start_year=1, start_month=1, start_day=1):
-    start_date = datetime(start_year, start_month, start_day)
-    return start_date + timedelta(hours=hours)
-
-
-
-
 
 
 def replace_outliers_with_median(df):
