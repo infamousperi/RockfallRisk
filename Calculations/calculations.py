@@ -1,6 +1,10 @@
 import pandas as pd
 from datetime import datetime, timedelta
-import numpy as np
+from multiprocessing import Pool, cpu_count
+import gc
+import os
+import tempfile
+import shutil
 
 
 def calculate_kinetic_energy_kj(mass, velocity):
@@ -45,39 +49,52 @@ def _last_clearing_datetime(event_datetime):
     return clearing_datetime
 
 
+def _process_group(group):
+    group['LastClearing'] = group['DateTime'].apply(_sim_last_clearing_datetime)
+    group['CumulativeMass_kg'] = group.groupby('LastClearing')['Mass [kg]'].cumsum()
+    group['CumulativeMassInNet'] = group['CumulativeMass_kg'] - group['Mass [kg]']
+
+    first_events = group.drop_duplicates('DateTime').set_index('DateTime')['CumulativeMassInNet']
+    group['CumulativeMassInNet'] = group['DateTime'].map(first_events)
+
+    return group[['Kinetic Energy [kJ]', 'CumulativeMassInNet']]
+
+
+def group_by_200_years(year):
+    # Function to group years into 200-year intervals
+    return (year // 200) * 200
+
+
 def sim_calculate_cumulative_mass_since_clearing(df1, df2):
-    chunk_size = 100000
+    # Assuming 'Year' is a column in df1 and df2
+    start_year = min(df1['Year'].min(), df2['Year'].min())
+    end_year = max(df1['Year'].max(), df2['Year'].max())
 
-    # Concatenate dataframes without resetting index to maintain original order
-    concatenated_df = pd.concat([df1, df2])
+    # Create a list to hold data chunks for processing
+    data_chunks = []
 
-    # Sort by 'DateTime' string
-    concatenated_df = concatenated_df.sort_values('DateTime')
+    for start in range(start_year, end_year + 1, 10000):
+        end = min(start + 9999, end_year)
 
-    # Split the dataframe into chunks
-    chunks = [concatenated_df[i:i + chunk_size] for i in range(0, concatenated_df.shape[0], chunk_size)]
+        # Filter df1 and df2 for the 10,000-year chunk
+        chunk1 = df1[(df1['Year'] >= start) & (df1['Year'] <= end)]
+        chunk2 = df2[(df2['Year'] >= start) & (df2['Year'] <= end)]
 
-    result_chunks = []
+        # Concatenate the chunks and sort
+        concatenated_chunk = pd.concat([chunk1, chunk2]).sort_values('DateTime')
+        data_chunks.append(concatenated_chunk)
 
-    for chunk in chunks:
-        # Apply custom function to calculate the 'LastClearing' based on the 'DateTime' string
-        chunk['LastClearing'] = chunk['DateTime'].apply(_sim_last_clearing_datetime)
+        # Optional: clear memory
+        del concatenated_chunk, chunk1, chunk2
+        gc.collect()
 
-        # Calculate cumulative mass
-        chunk['CumulativeMass_kg'] = chunk.groupby('LastClearing')['Mass [kg]'].cumsum()
-        chunk['CumulativeMassInNet'] = chunk['CumulativeMass_kg'] - chunk['Mass [kg]']
+    # Determine the number of processes based on available CPU cores
+    num_processes = min(cpu_count(), len(data_chunks))
 
-        # Find the first event for each 'DateTime' and get its 'CumulativeMassInNet'
-        first_events = chunk.drop_duplicates('DateTime').set_index('DateTime')['CumulativeMassInNet']
-        chunk['CumulativeMassInNet'] = chunk['DateTime'].map(first_events)
+    # Use multiprocessing Pool for parallel processing
+    with Pool(processes=num_processes) as pool:
+        result_chunks = pool.map(_process_group, data_chunks)
 
-        # Select relevant columns
-        chunk_result = chunk[
-            ['Kinetic Energy [kJ]', 'CumulativeMassInNet']]
-
-        result_chunks.append(chunk_result)
-
-    # Concatenate the processed chunks
     result_df = pd.concat(result_chunks)
     return result_df
 
@@ -88,7 +105,7 @@ def _sim_last_clearing_datetime(event_datetime_str):
     year, month, day = map(int, date_part.split('-'))
 
     # Check if the event time is before the clearing time on the same day
-    if time_part < "02:30":
+    if time_part < "23:30":
         day -= 1
         # Check for rollover
         if day < 1:
