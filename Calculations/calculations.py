@@ -49,7 +49,8 @@ def _last_clearing_datetime(event_datetime):
     return clearing_datetime
 
 
-def _process_group(group):
+def _process_group(args):
+    group, idx = args
     group['LastClearing'] = group['DateTime'].apply(_sim_last_clearing_datetime)
     group['CumulativeMass_kg'] = group.groupby('LastClearing')['Mass [kg]'].cumsum()
     group['CumulativeMassInNet'] = group['CumulativeMass_kg'] - group['Mass [kg]']
@@ -57,12 +58,17 @@ def _process_group(group):
     first_events = group.drop_duplicates('DateTime').set_index('DateTime')['CumulativeMassInNet']
     group['CumulativeMassInNet'] = group['DateTime'].map(first_events)
 
-    return group[['Kinetic Energy [kJ]', 'CumulativeMassInNet']]
+    processed_chunk = group[['Kinetic Energy [kJ]', 'CumulativeMassInNet']].apply(pd.to_numeric, downcast='float')
 
+    # Directory for temporary files
+    temp_dir = 'Data/Temp'
+    os.makedirs(temp_dir, exist_ok=True)  # Ensure the directory exists
 
-def group_by_200_years(year):
-    # Function to group years into 200-year intervals
-    return (year // 200) * 200
+    # Save the processed chunk to a temporary file
+    temp_file_path = os.path.join(temp_dir, f'processed_chunk_{idx}.csv')
+    processed_chunk.to_csv(temp_file_path, index=False)
+
+    return temp_file_path
 
 
 def sim_calculate_cumulative_mass_since_clearing(df1, df2):
@@ -70,32 +76,39 @@ def sim_calculate_cumulative_mass_since_clearing(df1, df2):
     start_year = min(df1['Year'].min(), df2['Year'].min())
     end_year = max(df1['Year'].max(), df2['Year'].max())
 
-    # Create a list to hold data chunks for processing
     data_chunks = []
 
-    for start in range(start_year, end_year + 1, 10000):
-        end = min(start + 9999, end_year)
+    for start in range(start_year, end_year + 1, 5000):
+        end = min(start + 4999, end_year)
 
-        # Filter df1 and df2 for the 10,000-year chunk
         chunk1 = df1[(df1['Year'] >= start) & (df1['Year'] <= end)]
         chunk2 = df2[(df2['Year'] >= start) & (df2['Year'] <= end)]
 
-        # Concatenate the chunks and sort
         concatenated_chunk = pd.concat([chunk1, chunk2]).sort_values('DateTime')
         data_chunks.append(concatenated_chunk)
 
-        # Optional: clear memory
         del concatenated_chunk, chunk1, chunk2
         gc.collect()
 
-    # Determine the number of processes based on available CPU cores
     num_processes = min(cpu_count(), len(data_chunks))
 
-    # Use multiprocessing Pool for parallel processing
-    with Pool(processes=num_processes) as pool:
-        result_chunks = pool.map(_process_group, data_chunks)
+    # Create a list to hold the paths to temporary files
+    temp_file_paths = []
 
+    with Pool(processes=num_processes) as pool:
+        temp_file_paths = pool.map(_process_group, [(chunk, idx) for idx, chunk in enumerate(data_chunks)])
+
+    # Read and concatenate all the processed chunks
+    result_chunks = [pd.read_csv(temp_file) for temp_file in temp_file_paths]
     result_df = pd.concat(result_chunks)
+
+    # Clean up the temporary files
+    for temp_file in temp_file_paths:
+        os.remove(temp_file)
+
+    # Explicitly trigger garbage collection
+    gc.collect()
+
     return result_df
 
 
