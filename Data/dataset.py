@@ -55,10 +55,12 @@ def _process_chunk(args):
     processed_chunk.to_csv(temp_file, index=False)
     return temp_file
 
+
 def merge_simulated_data(mass, velocity, timediff):
     full_data = mass.join(velocity['Velocity [m/s]']).join(timediff['TimeDiffHours'])
     full_data['CumulativeTimeDiff'] = full_data['TimeDiffHours'].cumsum()
 
+    ensure_directory_exists('Data/Temp')
     chunk_size = 100000
 
     chunks = [(full_data.iloc[i:i + chunk_size], 'Data/Temp', idx)
@@ -107,3 +109,8 @@ def replace_outliers_with_median(df):
         df.loc[outliers, col] = median_without_outliers
 
     return df
+
+
+def ensure_directory_exists(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
