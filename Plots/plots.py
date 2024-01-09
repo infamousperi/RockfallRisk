@@ -119,7 +119,7 @@ def show_time_between_events(df1, df2):
     fig.show()
 
 
-def show_simulated_data(df1, df2, plot_info):
+def show_simulated_data(df1, df2, plot_info, n_years):
     title = plot_info[0]
     column = plot_info[1]
 
@@ -136,21 +136,13 @@ def show_simulated_data(df1, df2, plot_info):
     plt.hist(df2, bins='auto', edgecolor='black', density=True, alpha=0.5,
              label='M.C.-Simulation Zone 2')
 
-    plt.axvline(mean_zone1, color='red', linestyle='dashed', linewidth=2,
-                label=f'Mittelwert Zone 1: {mean_zone1:.2f}')
     plt.axvline(np.median(df1), color='green', linestyle='dashed', linewidth=2,
                 label=f'Median Zone 1: {np.median(df1):.2f}')
-    plt.axvline(std_dev_zone1, color='blue', linestyle='dashed', linewidth=2,
-                label=f'Standardabweichung Zone 1: {std_dev_zone1:.2f}')
 
-    plt.axvline(mean_zone2, color='red', linestyle='dashed', linewidth=2,
-                label=f'Mittelwert Zone 2: {mean_zone2:.2f}')
     plt.axvline(np.median(df2), color='green', linestyle='dashed', linewidth=2,
                 label=f'Median Zone 2: {np.median(df2):.2f}')
-    plt.axvline(std_dev_zone2, color='blue', linestyle='dashed', linewidth=2,
-                label=f'Standardabweichung Zone 2: {std_dev_zone2:.2f}')
 
-    plt.title('Monte Carlo-Simulationen: '+title+' Zone 1 und Zone 2 (1,000,000 Durchläufe)')
+    plt.title('Monte Carlo-Simulationen: '+title+' Zone 1 und Zone 2 (' + str(n_years) + ' Jahre)')
     plt.xlabel(column)
     plt.ylabel('Häufigkeit')
     plt.legend()

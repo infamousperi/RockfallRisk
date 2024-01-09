@@ -41,7 +41,7 @@ def calculate_cumulative_mass_since_clearing(df1, df2):
 
 
 def _last_clearing_datetime(event_datetime):
-    clearing_datetime = event_datetime.replace(hour=2, minute=30, second=0, microsecond=0)
+    clearing_datetime = event_datetime.replace(hour=23, minute=30, second=0, microsecond=0)
 
     if event_datetime < clearing_datetime:
         clearing_datetime -= timedelta(days=1)
@@ -78,8 +78,8 @@ def sim_calculate_cumulative_mass_since_clearing(df1, df2):
 
     data_chunks = []
 
-    for start in range(start_year, end_year + 1, 5000):
-        end = min(start + 4999, end_year)
+    for start in range(start_year, end_year + 1, 10000):
+        end = min(start + 9999, end_year)
 
         chunk1 = df1[(df1['Year'] >= start) & (df1['Year'] <= end)]
         chunk2 = df2[(df2['Year'] >= start) & (df2['Year'] <= end)]
@@ -91,9 +91,6 @@ def sim_calculate_cumulative_mass_since_clearing(df1, df2):
         gc.collect()
 
     num_processes = min(cpu_count(), len(data_chunks))
-
-    # Create a list to hold the paths to temporary files
-    temp_file_paths = []
 
     with Pool(processes=num_processes) as pool:
         temp_file_paths = pool.map(_process_group, [(chunk, idx) for idx, chunk in enumerate(data_chunks)])
