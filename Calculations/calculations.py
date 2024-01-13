@@ -78,8 +78,8 @@ def sim_calculate_cumulative_mass_since_clearing(df1, df2):
 
     data_chunks = []
 
-    for start in range(start_year, end_year + 1, 10000):
-        end = min(start + 9999, end_year)
+    for start in range(start_year, end_year + 1, 2000):
+        end = min(start + 1999, end_year)
 
         chunk1 = df1[(df1['Year'] >= start) & (df1['Year'] <= end)]
         chunk2 = df2[(df2['Year'] >= start) & (df2['Year'] <= end)]
