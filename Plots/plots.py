@@ -148,3 +148,28 @@ def show_simulated_data(df1, df2, plot_info, n_years):
     plt.legend()
     plt.show()
 
+
+def show_linear_net_resistence():
+    # Gegebene Datenpunkte
+    x_werte = [0, 2000, 4000]
+    y_werte = [1000, 500, 0]
+
+    # Erstellen des Plots
+    plt.figure(figsize=(10, 7))
+    plt.plot(x_werte, y_werte, label='Belastungsfähigkeit des Netzes', color='blue', marker='o')
+
+    # Achsen beschriften
+    plt.xlabel('Last (kg)')
+    plt.ylabel('Belastungsfähigkeit (kg)')
+
+    # Titel des Graphen
+    plt.title('Belastungsfähigkeit des Netzes in Abhängigkeit von der Last')
+
+    # Legende anzeigen
+    plt.legend()
+
+    # Raster anzeigen
+    plt.grid(True)
+
+    # Zeige den Plot
+    plt.show()
