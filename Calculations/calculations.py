@@ -95,8 +95,8 @@ def sim_calculate_cumulative_mass_since_clearing(df1, df2):
     with Pool(processes=num_processes) as pool:
         temp_file_paths = pool.map(_process_group, [(chunk, idx) for idx, chunk in enumerate(data_chunks)])
 
-    # Read and concatenate all the processed chunks
-    result_chunks = [pd.read_csv(temp_file) for temp_file in temp_file_paths]
+    column_types = {'Kinetic Energy [kJ]': 'float32', 'CumulativeMassInNet': 'float32'}
+    result_chunks = [pd.read_csv(temp_file, dtype=column_types) for temp_file in temp_file_paths]
     result_df = pd.concat(result_chunks)
 
     # Clean up the temporary files
