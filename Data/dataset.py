@@ -26,6 +26,7 @@ def _read_csv(filename):
     return df
 
 
+# Custom Datetime for dates out of the range in Python
 def _custom_date_time(hours, start_year=1, start_month=1, start_day=1):
     # Ensure hours is numeric
     hours = float(hours)
@@ -43,6 +44,7 @@ def _custom_date_time(hours, start_year=1, start_month=1, start_day=1):
     return f"{date_str} {time_str}"
 
 
+# Chunked process for merging simulated data, calculate Kinetic energy and Datetime
 def _process_chunk(args):
     chunk, temp_dir, idx = args
     chunk['Kinetic Energy [kJ]'] = calculate_kinetic_energy_kj(chunk['Mass [kg]'], chunk['Velocity [m/s]'])

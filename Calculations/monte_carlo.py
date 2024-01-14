@@ -2,10 +2,9 @@ import pandas as pd
 import numpy as np
 from scipy.stats import gamma
 from scipy.stats import norm
-from scipy.stats import lognorm
-from scipy.stats import cauchy
 
 
+# Universal function for Gamma Distribution, used for Mass
 def simulate_gamma_distribution(df, n_simulations, sim_info):
     column = sim_info[1]
     isolated_data = df[column].dropna()
@@ -23,6 +22,7 @@ def simulate_gamma_distribution(df, n_simulations, sim_info):
     return simulated_df
 
 
+# Specialized function for Gamma Distribution, used for Timedelta
 def simulate_gamma_distribution_timediff(df, n_years, sim_info, decimal_places=0):
     column = sim_info[1]
     isolated_data = df[column].dropna()
@@ -67,6 +67,7 @@ def simulate_gamma_distribution_timediff(df, n_years, sim_info, decimal_places=0
     return simulated_df
 
 
+# Universal function for Gamma Distribution, used for Velocity
 def simulate_norm_distribution(df, n_simulations, sim_info):
     column = sim_info[1]
     isolated_data = df[column].dropna()

@@ -5,7 +5,7 @@ import plotly.figure_factory as ff
 import Calculations.preperations as prep
 import matplotlib.pyplot as plt
 import numpy as np
-from plotly.offline import iplot
+
 
 order = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
          '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']
@@ -123,12 +123,6 @@ def show_simulated_data(df1, df2, plot_info, n_years):
     title = plot_info[0]
     column = plot_info[1]
 
-    mean_zone1 = np.mean(df1[column])
-    mean_zone2 = np.mean(df2[column])
-
-    std_dev_zone1 = np.std(df1[column])
-    std_dev_zone2 = np.std(df2[column])
-
     plt.figure(figsize=(12, 8))
 
     plt.hist(df1, bins='auto', edgecolor='black', density=True, alpha=0.5,
@@ -148,3 +142,28 @@ def show_simulated_data(df1, df2, plot_info, n_years):
     plt.legend()
     plt.show()
 
+
+def show_linear_net_resistence():
+    # Gegebene Datenpunkte
+    x_werte = [0, 2000, 4000]
+    y_werte = [1000, 500, 0]
+
+    # Erstellen des Plots
+    plt.figure(figsize=(10, 7))
+    plt.plot(x_werte, y_werte, label='Belastungsfähigkeit des Netzes', color='blue', marker='o')
+
+    # Achsen beschriften
+    plt.xlabel('Last (kg)')
+    plt.ylabel('Belastungsfähigkeit (kg)')
+
+    # Titel des Graphen
+    plt.title('Belastungsfähigkeit des Netzes in Abhängigkeit von der Last')
+
+    # Legende anzeigen
+    plt.legend()
+
+    # Raster anzeigen
+    plt.grid(True)
+
+    # Zeige den Plot
+    plt.show()

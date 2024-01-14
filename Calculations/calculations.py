@@ -3,8 +3,6 @@ from datetime import datetime, timedelta
 from multiprocessing import Pool, cpu_count
 import gc
 import os
-import tempfile
-import shutil
 
 
 def calculate_kinetic_energy_kj(mass, velocity):
@@ -21,6 +19,7 @@ def calculate_timedelta(df):
     return df
 
 
+# This is only used with provided data of Zone 1 and 2
 def calculate_cumulative_mass_since_clearing(df1, df2):
     df1['Zone'] = 1
     df2['Zone'] = 2
@@ -49,6 +48,7 @@ def _last_clearing_datetime(event_datetime):
     return clearing_datetime
 
 
+# Chunked process to calculate cumulative Mass in Net for simulation data
 def _process_group(args):
     group, idx = args
     group['LastClearing'] = group['DateTime'].apply(_sim_last_clearing_datetime)
@@ -71,15 +71,16 @@ def _process_group(args):
     return temp_file_path
 
 
+# This is only used with simulated data of Zone 1 and 2
 def sim_calculate_cumulative_mass_since_clearing(df1, df2):
-    # Assuming 'Year' is a column in df1 and df2
     start_year = min(df1['Year'].min(), df2['Year'].min())
     end_year = max(df1['Year'].max(), df2['Year'].max())
 
     data_chunks = []
 
-    for start in range(start_year, end_year + 1, 10000):
-        end = min(start + 9999, end_year)
+    # Define chunks
+    for start in range(start_year, end_year + 1, 2000):
+        end = min(start + 1999, end_year)
 
         chunk1 = df1[(df1['Year'] >= start) & (df1['Year'] <= end)]
         chunk2 = df2[(df2['Year'] >= start) & (df2['Year'] <= end)]
@@ -92,6 +93,8 @@ def sim_calculate_cumulative_mass_since_clearing(df1, df2):
 
     num_processes = min(cpu_count(), len(data_chunks))
 
+    # Multiprocessing for faster execution
+    # Save processed data in temp_files for better memory management
     with Pool(processes=num_processes) as pool:
         temp_file_paths = pool.map(_process_group, [(chunk, idx) for idx, chunk in enumerate(data_chunks)])
 
@@ -109,6 +112,7 @@ def sim_calculate_cumulative_mass_since_clearing(df1, df2):
     return result_df
 
 
+# Using custom Datetime for simulated data
 def _sim_last_clearing_datetime(event_datetime_str):
     # Extract the year, month, day, and time components from the string
     date_part, time_part = event_datetime_str.split(' ')
