@@ -5,7 +5,7 @@ import plotly.figure_factory as ff
 import Calculations.preperations as prep
 import matplotlib.pyplot as plt
 import numpy as np
-from plotly.offline import iplot
+
 
 order = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
          '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']
@@ -122,12 +122,6 @@ def show_time_between_events(df1, df2):
 def show_simulated_data(df1, df2, plot_info, n_years):
     title = plot_info[0]
     column = plot_info[1]
-
-    mean_zone1 = np.mean(df1[column])
-    mean_zone2 = np.mean(df2[column])
-
-    std_dev_zone1 = np.std(df1[column])
-    std_dev_zone2 = np.std(df2[column])
 
     plt.figure(figsize=(12, 8))
 
